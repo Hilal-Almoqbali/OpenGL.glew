@@ -35,7 +35,7 @@ int main(void)
     fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 
 
-    
+
 
     float postions[]={// the data
         -0.5f, -0.5f,
@@ -58,7 +58,6 @@ int main(void)
 
 
     //glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer
-
 
 
 
