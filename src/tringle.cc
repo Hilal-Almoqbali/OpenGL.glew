@@ -59,7 +59,7 @@ int main(void)
 
     //glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer
 
-
+    
 
 
 
