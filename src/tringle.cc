@@ -96,8 +96,13 @@ static unsigned int CompileShadder(const std::string &source,unsigned int type)
     glGetShaderiv(id,GL_COMPILE_STATUS,&result);
     if(!result)
     {
-        
-        char* message = alloca()
+        int length;
+        glGetShaderiv(id,GL_INFO_LOG_LENGTH,)
+        char* message = (char*)alloca(length*sizeof(char));
+        glGetInfoLog(id,length,&length,message);
+        std::cout << "faile compile "<< (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << "shadder" << std::endl;
+        std::cout << message << std::endl;
+        glDeleteShader(id);
     }
 
     return id;
