@@ -6,8 +6,7 @@
 #include <iostream>
 #include <string>
 
-static unsigned int CompileShadder(unsigned int type,const std::string &source);
-static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder);
+
 
 
 std::string vertexShadder =
@@ -45,7 +44,7 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
-    GLenum err = glewInit();
+    GLenum err = glewInit();//   glewInit()
     if (GLEW_OK != err)
     {
     /* Problem: glewInit failed, something is seriously wrong. */
@@ -55,6 +54,8 @@ int main(void)
 
 
 
+    unsigned int CompileShadder(unsigned int type,const std::string &source);
+    unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder);
 
     float postions[]={// the data
         -0.5f, -0.5f,
@@ -78,7 +79,9 @@ int main(void)
 
     glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer
 
-    
+    unsigned int CompileShadder(unsigned int type,const std::string &source);
+    unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder);
+
     unsigned int shadder = CreatShadder(vertexShadder,fragmentShadder);
     glUseProgram(shadder);
 
@@ -109,8 +112,8 @@ int main(void)
 
 static unsigned int CompileShadder(unsigned int type,const std::string &source)
 {
-    unsignd int id = glCreateShader(type);
-    const char* src = source.c_str();
+    unsigned int id = glCreateShader(type);
+    const char* src = source.c_str();// get a C pointer to the C++ string
     glShadderSource(id,1,&src,nullptr);
     glCompileShader(id);
 
@@ -118,11 +121,12 @@ static unsigned int CompileShadder(unsigned int type,const std::string &source)
     glGetShaderiv(id,GL_COMPILE_STATUS,&result);
     if(!result)
     {
+       
         int length;
-        glGetShaderiv(id,GL_INFO_LOG_LENGTH,)
+        glGetShaderiv(id,GL_INFO_LOG_LENGTH,);
         char* message = (char*)alloca(length*sizeof(char));
         glGetInfoLog(id,length,&length,message);
-        std::cout << "faile compile "<< (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << "shadder" << std::endl;
+        std::cout << "faile compile "<< (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shadder" << std::endl;
         std::cout << message << std::endl;
         glDeleteShader(id);
     }
@@ -130,11 +134,12 @@ static unsigned int CompileShadder(unsigned int type,const std::string &source)
     return id;
 }
 
-static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder)
+static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder)
 {
-    unsignd int program = glCreateProgram();
-    unsignd int vs = CompileShadder(GL_VERTEX_SHADER,VertexShadder);
-    unsignd int fs = CompileShadder(GL_FRAGMENT_SHADER,fragmentShadder);
+    
+    unsigned int program = glCreateProgram();
+    unsigned int vs = CompileShadder(GL_VERTEX_SHADER,VertexShadder);
+    unsigned int fs = CompileShadder(GL_FRAGMENT_SHADER,FragmentShadder);
 
     glAttachShader(program,vs);
     glAttachShader(program,fs);
