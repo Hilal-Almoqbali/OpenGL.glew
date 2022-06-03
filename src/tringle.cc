@@ -6,7 +6,8 @@
 #include <iostream>
 #include <string>
 
-
+    unsigned int CompileShadder(unsigned int type,const std::string &source);
+    unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder);
 
 
 std::string vertexShadder =
@@ -54,8 +55,7 @@ int main(void)
 
 
 
-    unsigned int CompileShadder(unsigned int type,const std::string &source);
-    unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder);
+    
 
     float postions[]={// the data
         -0.5f, -0.5f,
@@ -79,8 +79,7 @@ int main(void)
 
     glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer
 
-    unsigned int CompileShadder(unsigned int type,const std::string &source);
-    unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder);
+
 
     unsigned int shadder = CreatShadder(vertexShadder,fragmentShadder);
     glUseProgram(shadder);
