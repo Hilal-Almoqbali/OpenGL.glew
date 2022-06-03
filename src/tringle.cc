@@ -62,8 +62,6 @@ int main(void)
     
 
 
-
-
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
