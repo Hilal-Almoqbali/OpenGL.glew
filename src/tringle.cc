@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static unsigned int CompileShadder(const std::string &source,unsigned int type);
+static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder);
+
+std::string vertexShadder =
+"#vertion 330 core/n"
 
 
 
@@ -87,7 +92,7 @@ int main(void)
 
 static unsigned int CompileShadder(const std::string &source,unsigned int type)
 {
-    unsignd int id = glCreateShader(GL_VERTEX_SHADER);
+    unsignd int id = glCreateShader(type);
     const char* src = source.c_str();
     glShadderSource(id,1,&src,nullptr);
     glCompileShader(id);
