@@ -3,14 +3,28 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <string>
 
-static unsigned int CompileShadder(const std::string &source,unsigned int type);
+static unsigned int CompileShadder(unsigned int type,const std::string &source);
 static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder);
+
 
 std::string vertexShadder =
 "#vertion 330 core/n"
+"layout(location = 0) in vec4 postions;"
+"void main()"
+"{"
+"gl_Position = postions;"
+"}";
 
-
+std::string fragmentShadder =
+"#vertion 330 core/n"
+"layout(location = 0) out vec4 color;"
+"void main()"
+"{"
+"color = vec4(1.0,0.0,0.0,1.0);"
+"}";
 
 int main(void)
 {
@@ -62,9 +76,12 @@ int main(void)
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(float)*2,0);//tell OpenGL the buffer's layout
 
 
-    //glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer
+    glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer
 
     
+    unsigned int shadder = CreatShadder(vertexShadder,fragmentShadder);
+    glUseProgram(shadder);
+
 
 
     /* Loop until the user closes the window */
@@ -90,7 +107,7 @@ int main(void)
     return 0;
 }
 
-static unsigned int CompileShadder(const std::string &source,unsigned int type)
+static unsigned int CompileShadder(unsigned int type,const std::string &source)
 {
     unsignd int id = glCreateShader(type);
     const char* src = source.c_str();
