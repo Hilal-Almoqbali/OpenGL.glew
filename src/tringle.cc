@@ -84,3 +84,38 @@ int main(void)
     glfwTerminate();
     return 0;
 }
+
+static unsigned int CompileShadder(const std::string &source,unsigned int type)
+{
+    unsignd int id = glCreateShader(GL_VERTEX_SHADER);
+    const char* src = source.c_str();
+    glShadderSource(id,1,&src,nullptr);
+    glCompileShader(id);
+
+    unsigned int result;
+    glGetShaderiv(id,GL_COMPILE_STATUS,&result);
+    if(!result)
+    {
+        
+        char* message = alloca()
+    }
+
+    return id;
+}
+
+static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &fragmentShadder)
+{
+    unsignd int program = glCreateProgram();
+    unsignd int vs = CompileShadder(GL_VERTEX_SHADER,VertexShadder);
+    unsignd int fs = CompileShadder(GL_FRAGMENT_SHADER,fragmentShadder);
+
+    glAttachShader(program,vs);
+    glAttachShader(program,fs);
+    glLinkProgram(program);
+    glValidateProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
+}
