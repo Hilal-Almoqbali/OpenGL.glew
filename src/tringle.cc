@@ -16,7 +16,7 @@ std::string vertexShadder =
 "layout(location = 0) in vec4 postions;\n"
 "void main()\n"
 "{\n"
-"gl_Position = postions;\n"
+"gl_Position = vec4(postions.xy,0.0,1.0);\n"
 "}\n";
 
 std::string fragmentShadder =

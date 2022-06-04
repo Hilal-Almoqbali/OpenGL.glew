@@ -11,21 +11,19 @@ static unsigned int CreatShadder(const std::string &VertexShadder, const std::st
 
 
 std::string vertexShadder =
-    "#version 330 core \n"
-    "\n"
-    "layout(location = 0) in vec4 postions;\n"
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
     "void main()\n"
     "{\n"
-    "gl_Position = vec4(postions);\n"
-    "}\n\0";
-
+    "   gl_Position = vec4(aPos, 1.0);\n"
+    "}\0";
 std::string fragmentShadder =
-    "#version 330 core \n"
-    "\n"
-    "layout(location = 0) out vec4 color;\n"
+    "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "uniform vec4 ourColor;\n"
     "void main()\n"
     "{\n"
-    "color = vec4(1.0,0.0,0.0,1.0);\n"
+    "   FragColor = ourColor;\n"
     "}\n\0";
 
 int main(void)
@@ -33,8 +31,12 @@ int main(void)
     GLFWwindow* window;
 
     /* Initialize the library */
-    if (!glfwInit())
-        {return -1;}
+    if (!glfwInit()){
+        return -1;
+        }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 
 
@@ -46,6 +48,9 @@ int main(void)
         glfwTerminate();
         return -1;
     }
+
+    glfwMakeContextCurrent(window);// i need to know what is this
+
         // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -85,13 +90,15 @@ int main(void)
 
 
     unsigned int shadder = CreatShadder(vertexShadder,fragmentShadder);
-    glUseProgram(shadder);
+    
 
 
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+
+        glUseProgram(shadder);
         /* Render here */
         glClearColor(0.0f, 0.3f, 0.2f, 9.0f);// to color the window
         glClear(GL_COLOR_BUFFER_BIT);
