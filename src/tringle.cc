@@ -6,25 +6,27 @@
 #include <iostream>
 #include <string>
 
-    unsigned int CompileShadder(unsigned int type,const std::string &source);
-    unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder);
+static unsigned int CompileShadder(unsigned int type,const std::string &source);
+static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder);
 
 
 std::string vertexShadder =
-"#vertion 330 core/n"
-"layout(location = 0) in vec4 postions;"
-"void main()"
-"{"
-"gl_Position = postions;"
-"}";
+"#version 330 core \n"
+"\n"
+"layout(location = 0) in vec4 postions;\n"
+"void main()\n"
+"{\n"
+"gl_Position = postions;\n"
+"}\n";
 
 std::string fragmentShadder =
-"#vertion 330 core/n"
-"layout(location = 0) out vec4 color;"
-"void main()"
-"{"
-"color = vec4(1.0,0.0,0.0,1.0);"
-"}";
+"#version 330 core \n"
+"\n"
+"layout(location = 0) out vec4 color;\n"
+"void main()\n"
+"{\n"
+"color = vec4(1.0,0.0,0.0,1.0);\n"
+"}\n";
 
 int main(void)
 {
@@ -113,18 +115,19 @@ static unsigned int CompileShadder(unsigned int type,const std::string &source)
 {
     unsigned int id = glCreateShader(type);
     const char* src = source.c_str();// get a C pointer to the C++ string
-    glShadderSource(id,1,&src,nullptr);
+    glShaderSource(id,1,&src,nullptr);
     glCompileShader(id);
 
-    unsigned int result;
+    int result;
     glGetShaderiv(id,GL_COMPILE_STATUS,&result);
+
     if(!result)
     {
        
         int length;
-        glGetShaderiv(id,GL_INFO_LOG_LENGTH,);
+        glGetShaderiv(id,GL_INFO_LOG_LENGTH, &length);
         char* message = (char*)alloca(length*sizeof(char));
-        glGetInfoLog(id,length,&length,message);
+        glGetShaderInfoLog(id,length, &length,message);
         std::cout << "faile compile "<< (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shadder" << std::endl;
         std::cout << message << std::endl;
         glDeleteShader(id);
