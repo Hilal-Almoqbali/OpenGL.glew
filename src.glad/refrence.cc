@@ -2,10 +2,19 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <iostream>
 #include <cmath>
 
+struct ShadderSource
+{
+    std::string vertexSource;
+    std::string fragmentSource;
+};
+
+static ShadderSource ParseShader(const char* filePath);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 static unsigned int CompileShadder(const char* source,unsigned int type);
@@ -15,22 +24,7 @@ static unsigned int LinkShader(unsigned int vertexShader,unsigned int fragmentSh
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-const char *vertexShaderSource =
-    "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos, 1.0);\n"
-    "}\0";
 
-const char *fragmentShaderSource = 
-    "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "uniform vec4 ourColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = ourColor;\n"
-    "}\n\0";
 
 int main()
 {
@@ -64,6 +58,11 @@ int main()
         return -1;
     }
 
+    ShadderSource source = ParseShader("../res/shaders/tringle0.shader");
+    std::cout<<std::endl<<"the vertex source:\n" << source.vertexSource <<std::endl;
+    std::cout<<std::endl<<"the fragment source:\n" << source.fragmentSource <<std::endl;
+    const char* vertexShaderSource = source.vertexSource.c_str();
+    const char* fragmentShaderSource = source.fragmentSource.c_str();  
     // build and compile our shader program
 
     unsigned int vertexShader = CompileShadder(vertexShaderSource,GL_VERTEX_SHADER);
@@ -137,7 +136,7 @@ int main()
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+    //glDeleteProgram(shaderProgram);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -196,4 +195,39 @@ static unsigned int LinkShader(unsigned int vertexShader,unsigned int fragmentSh
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     return shaderProgram;
+}
+
+static ShadderSource ParseShader(const char* filePath)
+{
+    std::ifstream stream(filePath);
+
+    enum class ShaderType
+    {
+        NONE =-1,VERTEX = 0,FRAGMENT = 1
+    };
+
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+    while(getline(stream,line))
+    {
+        if(line.find("#shader") != std::string::npos)
+        {
+            if(line.find("vertex") != std::string::npos)
+            {
+                //set mode to vertex
+                type = ShaderType::VERTEX;
+            }
+            if(line.find("fragment") != std::string::npos)
+            {
+                //set mode to fragment
+                type = ShaderType::FRAGMENT;
+            }
+            else
+            {
+                ss[(int)type] << line <<"\n";
+            }
+        }
+    }
+    return {ss[0].str(),ss[1].str()};
 }
