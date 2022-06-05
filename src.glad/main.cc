@@ -84,7 +84,6 @@ int main(void)
     //Vertex Attributes
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(float)*2,0);//tell OpenGL the buffer's layout
-
     glBindBuffer(GL_ARRAY_BUFFER,0);//select the type of the buffer and useing it
 
 
