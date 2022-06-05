@@ -58,9 +58,12 @@ int main()
         return -1;
     }
 
+
+
     ShadderSource source = ParseShader("../res/shaders/tringle0.shader");
     std::cout<<std::endl<<"the vertex source:\n" << source.vertexSource <<std::endl;
     std::cout<<std::endl<<"the fragment source:\n" << source.fragmentSource <<std::endl;
+    
     const char* vertexShaderSource = source.vertexSource.c_str();
     const char* fragmentShaderSource = source.fragmentSource.c_str();  
     // build and compile our shader program
@@ -74,9 +77,9 @@ int main()
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     float vertices[] = {
-         0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-         0.0f,  0.5f, 0.0f   // top 
+         -0.5f, -0.5f, 0.0f,  //0
+         0.5f, -0.5f, 0.0f,  // 1
+         0.5f,  0.5f, 0.0f   // 2 
     };
 
     unsigned int VBO, VAO;
@@ -91,13 +94,7 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    // glBindVertexArray(0);
-
-
-    // bind the VAO (it was already bound, but just to demonstrate): seeing as we only have a single VAO we can 
-    // just bind it beforehand before rendering the respective triangle; this is another approach.
+    
     glBindVertexArray(VAO);
 
 
@@ -218,7 +215,7 @@ static ShadderSource ParseShader(const char* filePath)
                 //set mode to vertex
                 type = ShaderType::VERTEX;
             }
-            if(line.find("fragment") != std::string::npos)
+            if(line.find("#fragment") != std::string::npos)
             {
                 //set mode to fragment
                 type = ShaderType::FRAGMENT;
