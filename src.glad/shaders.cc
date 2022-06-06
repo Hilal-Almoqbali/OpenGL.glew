@@ -136,7 +136,7 @@ int main()
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &vertexAttrib);
     glDeleteBuffers(1, &vertexbuffer);
-    //glDeleteProgram(shaderProgram);
+    glDeleteProgram(shaderProgram);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
