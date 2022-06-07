@@ -64,8 +64,21 @@ int main()
     std::cout<<std::endl<<"the vertex source:\n" << source.vertexSource <<std::endl;
     std::cout<<std::endl<<"the fragment source:\n" << source.fragmentSource <<std::endl;
     
-    const char* vertexShaderSource = source.vertexSource.c_str();
-    const char* fragmentShaderSource = source.fragmentSource.c_str();  
+    const char* vertexShaderSource = //source.vertexSource.c_str();
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 vertices;\n"
+    "void main()\n"
+    "{\n"
+     "  gl_Position = vec4(vertices, 1.0);\n"
+    "};\n";
+    const char* fragmentShaderSource = //source.fragmentSource.c_str();  
+    "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "uniform vec4 ourColor;\n"
+    "void main()\n"
+    "{\n"
+    "  FragColor = ourColor;\n"
+    "};\n";
     // build and compile our shader program
 
     unsigned int vertexShader = CompileShadder(vertexShaderSource,GL_VERTEX_SHADER);
