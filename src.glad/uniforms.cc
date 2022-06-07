@@ -73,11 +73,11 @@ int main()
     "};\n";
     const char* fragmentShaderSource = //source.fragmentSource.c_str();  
     "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "uniform vec4 ourColor;\n"
+    "out vec4 color;\n"
+    "uniform vec4 u_Color;\n"
     "void main()\n"
     "{\n"
-    "  FragColor = ourColor;\n"
+    "  color = u_Color;\n"
     "};\n";
     // build and compile our shader program
 
@@ -110,6 +110,17 @@ int main()
     
     glBindVertexArray(VAO);
 
+ // be sure to activate the shader before any calls to glUniform
+        glUseProgram(shaderProgram);
+
+
+
+    int locations = glGetUniformLocation(shaderProgram,"u_Color");
+    //ASSERT(locations != -1);
+    glUniform4f(locations,0.2f,0.3f,0.8f,1.0f);
+
+        float r = 0.0f;
+        float incresment =0.5f;
 
     // render loop
     // -----------
@@ -121,19 +132,17 @@ int main()
 
         // render
         // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // be sure to activate the shader before any calls to glUniform
-        glUseProgram(shaderProgram);
+        if( r > 1.0f){incresment = -0.5f;}
+        else if( r < 0.0f){incresment = 0.5f;}
+        r += incresment;
+       
 
-        // update shader uniform
-        double  timeValue = glfwGetTime();
-        float greenValue = static_cast<float>(sin(timeValue) / 2.0 + 0.5);
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+        glUniform4f(locations,0.2f,r,0.8f,1.0f);
 
-        // render the triangle
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
