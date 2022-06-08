@@ -123,8 +123,11 @@ int main()
     glBindVertexArray(vertexattrib);
 
  // be sure to activate the shader before any calls to glUniform
-        glUseProgram(shaderProgram);
+    glUseProgram(shaderProgram);
 
+    glUseProgram(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
     int locations = glGetUniformLocation(shaderProgram,"u_Color");
@@ -153,6 +156,12 @@ int main()
        
         
         glUniform4f(locations,0.2f,r,0.3f,1.0f);
+
+        glUseProgram(shaderProgram);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        
 
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
