@@ -35,7 +35,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    
 
 
     // glfw window creation
@@ -64,8 +64,21 @@ int main()
     std::cout<<std::endl<<"the vertex source:\n" << source.vertexSource <<std::endl;
     std::cout<<std::endl<<"the fragment source:\n" << source.fragmentSource <<std::endl;
     
-    const char* vertexShaderSource = source.vertexSource.c_str();
-    const char* fragmentShaderSource = source.fragmentSource.c_str();  
+    const char* vertexShaderSource = //source.vertexSource.c_str();
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 vertices;\n"
+    "void main()\n"
+    "{\n"
+     "  gl_Position = vec4(vertices, 1.0);\n"
+    "};\n";
+    const char* fragmentShaderSource = //source.fragmentSource.c_str();  
+    "#version 330 core\n"
+    "out vec4 color;\n"
+    "uniform vec4 u_Color;\n"
+    "void main()\n"
+    "{\n"
+    "  color = u_Color;\n"
+    "};\n";
     // build and compile our shader program
 
     unsigned int vertexShader = CompileShadder(vertexShaderSource,GL_VERTEX_SHADER);
@@ -77,26 +90,49 @@ int main()
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     float vertices[] = {
-         -0.5f, -0.5f, 0.0f,  //0
+        -0.5f, -0.5f, 0.0f,  // 0
          0.5f, -0.5f, 0.0f,  // 1
-         0.5f,  0.5f, 0.0f   // 2 
+         0.5f,  0.5f, 0.0f,  // 2 
+        -0.5f,  0.5f, 0.0f   // 4
     };
 
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
+    unsigned int indices[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
+    }; 
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    unsigned int vertexbuffer, vertexattrib;
+
+    glGenBuffers(1, &vertexbuffer);
+    glGenVertexArrays(1, &vertexattrib);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
+    
+    glBindVertexArray(vertexattrib);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    
-    glBindVertexArray(VAO);
+    unsigned int ibo;
+    glGenBuffers(1, &ibo);
+    glGenVertexArrays(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
+
+    glBindVertexArray(vertexattrib);
+
+ // be sure to activate the shader before any calls to glUniform
+        glUseProgram(shaderProgram);
+
+
+
+    int locations = glGetUniformLocation(shaderProgram,"u_Color");
+    //ASSERT(locations != -1);
+    glUniform4f(locations,0.2f,0.3f,0.8f,1.0f);
+
+        float r = 0.0f;
+        float incresment =0.5f;
 
     // render loop
     // -----------
@@ -108,20 +144,19 @@ int main()
 
         // render
         // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // be sure to activate the shader before any calls to glUniform
-        glUseProgram(shaderProgram);
+        if( r > 1.0f){incresment = -0.1f;}
+        else if( r < 0.0f){incresment = 0.1f;}
+        r += incresment;
+       
+        
+        glUniform4f(locations,0.2f,r,0.3f,1.0f);
 
-        // update shader uniform
-        double  timeValue = glfwGetTime();
-        float greenValue = static_cast<float>(sin(timeValue) / 2.0 + 0.5);
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
-        // render the triangle
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,nullptr);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -131,8 +166,8 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &vertexattrib);
+    glDeleteBuffers(1, &vertexbuffer);
     //glDeleteProgram(shaderProgram);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
