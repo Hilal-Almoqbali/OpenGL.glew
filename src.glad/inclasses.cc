@@ -1,271 +1,241 @@
+// Include GLEW
+#include <GL/glew.h>
 
-
-#include <glad/glad.h>
+// Include GLFW
 #include <GLFW/glfw3.h>
-#include <fstream>
-#include <sstream>
-#include <string>
+
 #include <iostream>
-#include <cmath>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 #include "renderer.h"
-#include "indexbuffer.h"
 #include "vertexbuffer.h"
+#include "indexbuffer.h"
 
-struct ShadderSource
+struct ShaderProgramSource
 {
-    std::string vertexSource;
-    std::string fragmentSource;
+    std::string VertexSource;
+    std::string FragmentSource;
 };
 
-static ShadderSource ParseShader(const char* filePath);
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
-static unsigned int CompileShadder(const char* source,unsigned int type);
-static unsigned int LinkShader(unsigned int vertexShader,unsigned int fragmentShader);
-
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-
-
-int main()
+static struct ShaderProgramSource ParseShader(const std::string& filepath)
 {
-    // glfw: initialize and configure
-    // ------------------------------
-    if (!glfwInit())
-        {return -1;}
+    enum class ShaderType
+    {
+        NONE = -1, VERTEX = 0, FRAGMENT = 1
+    };
+
+    std::ifstream stream(filepath);
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+
+    while (getline(stream, line))
+    {
+        if (line.find("#shader") != std::string::npos)
+        {
+            if (line.find("vertex") != std::string::npos)
+                type = ShaderType::VERTEX;
+            else if (line.find("fragment") != std::string::npos)
+                type = ShaderType::FRAGMENT;
+        }
+        else
+        {
+            ss[(int)type] << line << '\n';
+        }
+    }
+
+    return { ss[0].str(), ss[1].str() };
+}
+
+static unsigned int CompileShader(unsigned int type, const std::string& source)
+{
+    GLCall( unsigned int id = glCreateShader(type) );
+    const char* src = source.c_str();
+    GLCall( glShaderSource(id, 1, &src, nullptr) );
+    GLCall( glCompileShader(id) );
+
+    // Error handling
+    int result;
+    GLCall( glGetShaderiv(id, GL_COMPILE_STATUS, &result) );
+    std::cout << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader compile status: " << result << std::endl;
+    if ( result == GL_FALSE )
+    {
+        int length;
+        GLCall( glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length) );
+        char* message = (char*) alloca(length * sizeof(char));
+        GLCall( glGetShaderInfoLog(id, length, &length, message) );
+        std::cout 
+            << "Failed to compile "
+            << (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
+            << "shader"
+            << std::endl;
+        std::cout << message << std::endl;
+        GLCall( glDeleteShader(id) );
+        return 0;
+    }
+
+    return id;
+}
+
+static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+{
+    // create a shader program
+    unsigned int program = glCreateProgram();
+    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+    GLCall( glAttachShader(program, vs) );
+    GLCall( glAttachShader(program, fs) );
+
+    GLCall( glLinkProgram(program) );
+
+    GLint program_linked;
+
+    GLCall( glGetProgramiv(program, GL_LINK_STATUS, &program_linked) );
+    std::cout << "Program link status: " << program_linked << std::endl;
+    if (program_linked != GL_TRUE)
+    {
+        GLsizei log_length = 0;
+        GLchar message[1024];
+        GLCall( glGetProgramInfoLog(program, 1024, &log_length, message) );
+        std::cout << "Failed to link program" << std::endl;
+        std::cout << message << std::endl;
+    }
+
+    GLCall( glValidateProgram(program) );
+
+    GLCall( glDeleteShader(vs) );
+    GLCall( glDeleteShader(fs) );
+
+    return program;
+}
+
+int main( void )
+{
+    // Initialise GLFW
+    if( !glfwInit() )
+    {
+        fprintf( stderr, "Failed to initialize GLFW\n" );
+        getchar();
+        return -1;
+    }
+
+    glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
 
-
-    // glfw window creation
-    // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
+    // Open a window and create its OpenGL context
+    GLFWwindow* window = glfwCreateWindow( 1024, 768, "Tutorial 02 - Red triangle", NULL, NULL);
+    if( window == NULL ){
+        fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
+        getchar();
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+    // Initialize GLEW
+    glewExperimental = true; // Needed for core profile
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "Failed to initialize GLEW\n");
+        getchar();
+        glfwTerminate();
         return -1;
     }
 
+    std::cout << "Using GL Version: " << glGetString(GL_VERSION) << std::endl;
 
+    // Ensure we can capture the escape key being pressed below
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    ShadderSource source = ParseShader("../res/shaders/tringle0.shader");
-    std::cout<<std::endl<<"the vertex source:\n" << source.vertexSource <<std::endl;
-    std::cout<<std::endl<<"the fragment source:\n" << source.fragmentSource <<std::endl;
-    
-    const char* vertexShaderSource = //source.vertexSource.c_str();
-    "#version 330 core\n"
-    "layout (location = 0) in vec3 vertices;\n"
-    "void main()\n"
-    "{\n"
-     "  gl_Position = vec4(vertices, 1.0);\n"
-    "};\n";
-    const char* fragmentShaderSource = //source.fragmentSource.c_str();  
-    "#version 330 core\n"
-    "out vec4 color;\n"
-    "uniform vec4 u_Color;\n"
-    "void main()\n"
-    "{\n"
-    "  color = u_Color;\n"
-    "};\n";
-    // build and compile our shader program
-
-    unsigned int vertexShader = CompileShadder(vertexShaderSource,GL_VERTEX_SHADER);
-
-    unsigned int fragmentShader = CompileShadder(fragmentShaderSource,GL_FRAGMENT_SHADER);
-
-    unsigned int shaderProgram = LinkShader(vertexShader,fragmentShader);
-
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,  // 0
-         0.5f, -0.5f, 0.0f,  // 1
-         0.5f,  0.5f, 0.0f,  // 2 
-        -0.5f,  0.5f, 0.0f   // 4
+    float positions[] = {
+        -0.5f, -0.5f, // 0
+        0.5f, -0.5f, // 1
+        0.5f,  0.5f, // 2
+        -0.5f,  0.5f  // 3
     };
 
-    unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-    }; 
+    unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
 
+    // Have to set VAO before binding attrbutes
+    unsigned int vao;
+    GLCall( glGenVertexArrays(1, &vao) );
+    GLCall( glBindVertexArray(vao) );
 
-    unsigned int vertexbuffer, vertexattrib;
+    // Create vertex buffer and copy data
+    VertexBuffer vb(positions, 4 * 2 * sizeof(float));
 
-    VertexBuffer vb((char*)vertices, sizeof(vertices));
-    
-    glBindVertexArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    // define vertex layout
+    // This links the attrib pointer wih the buffer at index 0 in the vertex array object
+    GLCall( glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0) );
+    GLCall( glEnableVertexAttribArray(0) );
 
-    IndexBuffer ib(indices,6);
+    // Create index buffer
+    IndexBuffer ib(indices, 6);
 
+    ShaderProgramSource source = ParseShader("../res/shaders/tringl0.shader");
 
+    std::cout << "VERTEX" << std::endl << source.VertexSource << std::endl;
+    std::cout << "FRAGMENT" << std::endl << source.FragmentSource << std::endl;
 
+    unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
+    GLCall( glUseProgram(shader) );
 
-    glBindVertexArray(vertexattrib);
+    GLCall( unsigned int u_Color = glGetUniformLocation(shader, "u_Color") );
+    ASSERT(u_Color != -1);
 
- // be sure to activate the shader before any calls to glUniform
-    glUseProgram(shaderProgram);
+    float red = 0.0f;
+    float step = 0.05f;
 
-    glUseProgram(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GLCall( glUseProgram(0) );
+    GLCall( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+    GLCall( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) );
+    GLCall( glBindVertexArray(0) );
 
+    do {
+        // Clear the screen
+        GLCall( glClear( GL_COLOR_BUFFER_BIT );
 
-    int locations = glGetUniformLocation(shaderProgram,"u_Color");
-    //ASSERT(locations != -1);
-    glUniform4f(locations,0.2f,0.3f,0.8f,1.0f);
+        // set shader and set uniform color
+        GLCall( glUseProgram(shader) );
+        GLCall( glUniform4f(u_Color, red, 0.3, 0.8, 1.0) );
 
-        float r = 0.0f;
-        float incresment =0.5f;
+        // Instead of binding vertex buffer, attrib pointer, just bind Vertex Array Object
+        GLCall( glBindVertexArray(vao) );
 
-    // render loop
-    // -----------
-    while (!glfwWindowShouldClose(window))
-    {
-        // input
-        // -----
-        processInput(window);
-
-        // render
-        // ------
-        glClearColor(0.1f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        if( r > 1.0f){incresment = -0.1f;}
-        else if( r < 0.0f){incresment = 0.1f;}
-        r += incresment;
-       
-        
-        glUniform4f(locations,0.2f,r,0.3f,1.0f);
-
-        glUseProgram(shaderProgram);
+        // Bind index buffer
         ib.Bind();
-        
 
+        // Draw
+        GLCall( glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)) );
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,nullptr);
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
+        // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &vertexattrib);
-    glDeleteBuffers(1, &vertexbuffer);
-    //glDeleteProgram(shaderProgram);
+        // increment red
+        if (red < 0.0f || red > 1.0f)
+            step *= -1.0;
+        red += step;
 
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
+    } // Check if the ESC key was pressed or the window was closed
+    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+            glfwWindowShouldClose(window) == 0 );
+
+    // Cleanup VBO
+    GLCall( glDeleteVertexArrays(1, &vao) );
+    GLCall( glDeleteProgram(shader) );
+
+    // Close OpenGL window and terminate GLFW
     glfwTerminate();
+
     return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
-
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    // make sure the viewport matches the new window dimensions; note that width and 
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-}
-
-static unsigned int CompileShadder(const char* source,unsigned int type)
-{
-    unsigned int id = glCreateShader(type);
-    const char* src = source;
-    glShaderSource(id, 1,& src, NULL);
-    glCompileShader(id);
-    // check for shader compile errors
-    int success;
-    char infoLog[512];
-    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(id, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::"<<(type == GL_VERTEX_SHADER ? "vertex" : "fragment")<<"::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    return id;
-}
-
-static unsigned int LinkShader(unsigned int vertexShader,unsigned int fragmentShader)
-{
-    // link shaders
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    // check for linking errors
-    /*glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }*/
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return shaderProgram;
-}
-
-static ShadderSource ParseShader(const char* filePath)
-{
-    std::ifstream stream(filePath);
-
-    enum class ShaderType
-    {
-        NONE =-1,VERTEX = 0,FRAGMENT = 1
-    };
-
-    std::string line;
-    std::stringstream ss[2];
-    ShaderType type = ShaderType::NONE;
-    while(getline(stream,line))
-    {
-        if(line.find("#shader") != std::string::npos)
-        {
-            if(line.find("vertex") != std::string::npos)
-            {
-                //set mode to vertex
-                type = ShaderType::VERTEX;
-            }
-            if(line.find("#fragment") != std::string::npos)
-            {
-                //set mode to fragment
-                type = ShaderType::FRAGMENT;
-            }
-            else
-            {
-                ss[(int)type] << line <<"\n";
-            }
-        }
-    }
-    return {ss[0].str(),ss[1].str()};
-}
