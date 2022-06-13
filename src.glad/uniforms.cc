@@ -225,13 +225,14 @@ static unsigned int LinkShader(unsigned int vertexShader,unsigned int fragmentSh
 
 static ShadderSource ParseShader(const char* filePath)
 {
-    std::ifstream stream(filePath);
+    
 
     enum class ShaderType
     {
         NONE =-1,VERTEX = 0,FRAGMENT = 1
     };
-
+    
+    std::ifstream stream(filePath);
     std::string line;
     std::stringstream ss[2];
     ShaderType type = ShaderType::NONE;
