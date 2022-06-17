@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 #include <cmath>
-
+ 
 struct ShadderSource
 {
     std::string vertexSource;
