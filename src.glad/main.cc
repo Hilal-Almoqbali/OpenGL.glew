@@ -9,7 +9,6 @@
 static unsigned int CompileShadder(unsigned int type,const std::string &source);
 static unsigned int CreatShadder(const std::string &VertexShadder, const std::string &FragmentShadder);
 
-
 std::string vertexShadder =
     "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
